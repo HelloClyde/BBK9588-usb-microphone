@@ -16,6 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NAudio" Version="3.0.1" />
   </ItemGroup>
 </Project>
