@@ -64,15 +64,27 @@ if (
     -not $core.Contains(
         '#define PROBE_LOG_PATH       APP_DATA_DIR "\\9588usbmic.log"'
     ) -or
+    -not $core.Contains('#define PROBE_HAS_DEADLINE   0') -or
+    -not $core.Contains('#if USB_MIC_P18_PROBE && PROBE_HAS_DEADLINE') -or
+    -not $core.Contains('static int usb_start_baseline_is_unsafe(void)') -or
+    -not $core.Contains('if (usb_start_baseline_is_unsafe())') -or
+    -not $core.Contains(
+        'log_key_stage("reentry_quiesced_irq12_masked");'
+    ) -or
     -not $core.Contains('"STOP & EXIT"') -or
     -not $core.Contains('#define UI_WAVE_GAIN           2') -or
     -not $core.Contains('static void log_release_summary(void)') -or
     -not $core.Contains(
-        'Restart the device before reconnecting USB.'
+        'USB storage requires restart. To record again'
     ) -or
-    $core.Contains('Restart the 9588 before reconnecting USB.')
+    -not $musbCore.Contains(
+        'To record again, keep USB unplugged, reopen this app'
+    ) -or
+    $core.Contains('Restart the device before reconnecting USB.')
 ) {
-    throw 'Release BDA UI, log path, or restart warning is incomplete.'
+    throw (
+        'Release BDA UI, lifetime, log path, or restart warning is incomplete.'
+    )
 }
 if (
     -not (Test-Path -LiteralPath $iconPath) -or

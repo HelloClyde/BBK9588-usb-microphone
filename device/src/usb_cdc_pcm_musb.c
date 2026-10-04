@@ -1149,8 +1149,8 @@ static int usb_cdc_pcm_musb_run(void) {
     log_summary();
     bda_msgbox(
         "BBK USB Mic",
-        "USB storage is unavailable until restart.\n"
-        "Restart the device before reconnecting USB."
+        "USB storage requires restart.\n"
+        "To record again, keep USB unplugged, reopen this app, then reconnect USB."
     );
     return 0;
 }

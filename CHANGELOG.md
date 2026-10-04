@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Removed the probe-era four-hour deadline from the JZ4730 release backend;
+  recording now continues until Esc or `STOP & EXIT` is used.
+- Allow the JZ4730 release backend to start a new microphone session from its
+  intentional PHY-disconnected, IRQ12-masked shutdown state. Mass Storage
+  still requires a reboot.
 - Added `bbk9588-bda-sdk` as a pinned Git submodule and made local and CI
   device builds consume its public headers and packer directly.
 - Moved all five firmware-specific recording addresses, signature checks,

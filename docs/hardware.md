@@ -59,6 +59,11 @@ The current code does not restart the stock Mass Storage state machine.
 Although the previous IRQ handler is restored, IRQ12 remains masked and the
 device records `reboot_required=1`.
 
+The release build may start another microphone session from that intentional
+quiescent state when the PHY is disconnected. It masks IRQ12 before UDC MMIO
+and still validates the stock IRQ vector and controller masks before
+reconnecting. This re-entry path does not restore Mass Storage.
+
 The MUSB BDA follows the same lifecycle but polls EP0/EP1, leaves IRQ24
 masked, and gates the MUSB clock after disconnect. It also requires a restart.
 
@@ -69,7 +74,8 @@ Always:
 1. Stop PC capture.
 2. Physically disconnect USB.
 3. Exit the BDA through its UI or Esc.
-4. Reboot the device.
+4. Either reopen the BDA while USB remains disconnected, or reboot before
+   reconnecting USB for Mass Storage.
 
 Register readback or `recovery_ok`-style internal checks are not evidence of
 Mass Storage recovery. Only a complete Windows re-enumeration and successful

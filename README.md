@@ -14,7 +14,8 @@
 
 > [!WARNING]
 > 当前版本不能在退出后热恢复 USB Mass Storage。退出 BDA 前必须先拔 USB，
-> 随后重启设备；重启前不要重新连接 PC。
+> 如需再次录音，可保持 USB 断开并重新打开 BDA，看到录音界面后再连接 PC；
+> 如需使用 Mass Storage，必须先重启设备。
 
 ## 当前状态
 
@@ -30,7 +31,7 @@
 尚未实现或验证：
 
 - 退出 BDA 后恢复系统 USB Mass Storage。
-- 无需重启的 UDC 热切换。
+- 无需重启再次打开 BDA 的停机态重接管路径尚待一次真机验收。
 - Linux/macOS 主机工具。
 - 新增的 9588/JZ4720、9588/JZ4740、9688/JZ4730 和 9688/JZ4740
   profile 尚未完成各自的一次综合真机验收。
@@ -48,9 +49,10 @@
 精确恢复镜像 SHA-256、ABI 地址和最小测试矩阵见
 [`docs/firmware-compatibility.md`](docs/firmware-compatibility.md)。
 
-当前退出流程必须是：先拔 USB，再退出 BDA，最后重启设备。不要在退出后直接
-重新连接 PC；当前版本明确保留对应 UDC IRQ masked，并标记
-`restart_required=1`。
+当前退出流程必须先拔 USB，再退出 BDA。若继续录音，保持 USB 断开并重新打开
+BDA，看到录音界面后再连接 PC；若恢复系统 USB/Mass Storage，则必须重启。
+当前版本明确保留对应 UDC IRQ masked，并标记 `restart_required=1`，该标记专指
+恢复系统 USB 前需要重启。
 
 ## 目录
 
@@ -210,8 +212,8 @@ VB-CABLE 是 Donationware，不属于本项目的 Apache-2.0 源码。开发版�
    指示表示 PC 正在读取音频。
 4. PC 桥接程序会自动连接；需要保存独立 WAV 时可运行 `host\capture.cmd`。
 5. 点击设备上的 `STOP & EXIT`，或按 Esc，停止录音并断开 CDC。
-6. 看到重启提示后重启设备；重启前不要重新连接 USB。
-7. 系统 USB/Mass Storage 只能在重启后恢复。
+6. 如需再次录音，保持 USB 未连接，重新运行 BDA，看到录音界面后再连接 USB。
+7. 如需系统 USB/Mass Storage，重启设备后再连接 USB。
 
 设备端每次运行覆盖写入一份精简摘要日志：
 

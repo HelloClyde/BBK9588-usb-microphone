@@ -283,10 +283,10 @@ typedef unsigned int u32;
 #define PROBE_ENTRY_TEXT     ""
 #define PROBE_CONFIRM_TEXT   ""
 #define PROBE_COMPLETE_TEXT  \
-    "USB storage is unavailable until restart. Restart the device before reconnecting USB."
+    "USB storage requires restart. To record again, keep USB unplugged, reopen this app, then reconnect USB."
 #define PROBE_PRODUCT_DIGIT  '3'
 #define PROBE_PID_LOW        0x56
-#define PROBE_RUN_TICKS      (4u * 60u * 60u * 40u)
+#define PROBE_HAS_DEADLINE   0
 #else
 #define PROBE_TITLE          "UsbCdcP3"
 #define PROBE_PREFIX         "[UsbCdcP3] "
@@ -851,6 +851,10 @@ typedef unsigned int u32;
 #define PROBE_ENTRY_TEXT     "P4 entry reached. Press OK to create the baseline log."
 #define PROBE_CONFIRM_TEXT   "Connect PC USB now, then YES. P4 enumerates for 30 seconds and auto-disconnects."
 #define PROBE_COMPLETE_TEXT  "P4 complete; send debug\\usbmicp4.log and report the PC device name"
+#endif
+
+#ifndef PROBE_HAS_DEADLINE
+#define PROBE_HAS_DEADLINE 1
 #endif
 
 #if USB_MIC_P15_PROBE && !USB_PCM_TRANSPORT_PROBE && \
@@ -6489,9 +6493,13 @@ static void usb_service_once(void) {
 }
 
 static void run_usb_loop(void) {
+#if PROBE_HAS_DEADLINE
     u32 start;
     start = bda_gui_tick_count_25ms_like();
     while ((bda_gui_tick_count_25ms_like() - start) < PROBE_RUN_TICKS) {
+#else
+    while (1) {
+#endif
         ++g_loop_count;
         usb_service_once();
 #if USB_PCM_CDC_C3_PROBE
@@ -6507,7 +6515,7 @@ static void run_usb_loop(void) {
 #endif
         tiny_delay();
     }
-#if USB_MIC_P18_PROBE
+#if USB_MIC_P18_PROBE && PROBE_HAS_DEADLINE
     if (g_ui_exit_reason == UI_EXIT_NONE) {
         g_ui_exit_reason = UI_EXIT_TIMEOUT;
     }
@@ -8036,6 +8044,18 @@ static void log_release_summary(void) {
 }
 #endif
 
+#if USB_MIC_P15_PROBE
+static int usb_start_baseline_is_unsafe(void) {
+    if ((g_original_phy & 0x20000000u) != 0u) return 1;
+#if USB_PCM_RELEASE_UI
+    /* Product shutdown leaves IRQ12 masked after restoring the stock vector. */
+    return 0;
+#else
+    return (g_original_intc_mask & IRQ12_BIT) != 0u;
+#endif
+}
+#endif
+
 static int usb_cdc_pcm_pch_run(void) {
     int baseline_written;
     u32 pending;
@@ -8077,13 +8097,14 @@ static int usb_cdc_pcm_pch_run(void) {
     log_value("original_intc_mask_before", g_original_intc_mask);
     log_stage("baseline_ready_no_b304_read");
 #if USB_MIC_P15_PROBE
-    if ((g_original_intc_mask & IRQ12_BIT) != 0u ||
-        (g_original_phy & 0x20000000u) != 0u) {
+    if (usb_start_baseline_is_unsafe()) {
         log_stage("recovery_baseline_not_clean");
         log_key_stage("restart_required_before_start");
         bda_msgbox(
             PROBE_TITLE,
-#if USB_PCM_CDC_PROBE
+#if USB_PCM_RELEASE_UI
+            "USB controller is still active. Reboot with USB disconnected before reopening."
+#elif USB_PCM_CDC_PROBE
             "USB baseline is not clean. Reboot with USB disconnected before running CDC PCM."
 #elif USB_PCM_HID_PROBE
             "USB baseline is not clean. Reboot with USB disconnected before running HID PCM."
@@ -8111,6 +8132,11 @@ static int usb_cdc_pcm_pch_run(void) {
         );
         return 4;
     }
+#if USB_PCM_RELEASE_UI
+    if ((g_original_intc_mask & IRQ12_BIT) != 0u) {
+        log_key_stage("reentry_quiesced_irq12_masked");
+    }
+#endif
 #endif
 
 #if !USB_PCM_RELEASE_UI
